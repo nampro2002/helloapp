@@ -1,24 +1,25 @@
-# Stage 1: Build the application
-FROM maven:3.8.7 AS build
+# 🏗 STAGE 1: Build ứng dụng
+FROM maven:3.8.6-eclipse-temurin-17 AS builder
 WORKDIR /app
 
-# Copy the pom.xml and download the dependencies
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy the source code and build the application
 COPY src ./src
-RUN mvn package -DskipTests
 
-# Stage 2: Run the application
-FROM openjdk:17-jdk-slim
+# Cài đặt dependencies và build ứng dụng
+RUN mvn clean package -DskipTests
+
+# 🏗 STAGE 2: Chạy ứng dụng
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# Copy the jar file from the build stage
-COPY --from=build /app/target/*.jar app.jar
+# Copy JAR từ STAGE 1
+COPY --from=builder /app/target/*.jar app.jar
 
-# Expose the port on which the app runs
-EXPOSE 8080
-# Run the jar file
-ENTRYPOINT ["java", "-jar", "app.jar"]
-HEALTHCHECK --interval=3s --timeout=2s --start-period=5s --retries=1 CMD curl -f http://localhost:8080/health || exit 1
+# Expose cổng mới (8081)
+EXPOSE 8081
+
+# 🔹 HEALTHCHECK cập nhật với cổng mới
+HEALTHCHECK --interval=3s --timeout=2s --start-period=5s --retries=1 CMD curl -f http://localhost:8081/health || exit 1
+
+# Chạy ứng dụng trên cổng 8081
+ENTRYPOINT ["java", "-jar", "app.jar", "--server.port=8081"]
