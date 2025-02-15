@@ -19,6 +19,6 @@ COPY --from=build /app/target/*.jar app.jar
 
 # Expose the port on which the app runs
 EXPOSE 8080
-
+HEALTHCHECK --interval=3s --timeout=2s --start-period=5s --retries=1 CMD curl -f http://localhost:8080/health || exit 1
 # Run the jar file
 ENTRYPOINT ["java", "-jar", "app.jar"]
