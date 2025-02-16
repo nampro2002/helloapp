@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class HelloController {
     @GetMapping("")
     public String None(){
-        return "OKOKOKOKOKOKOKOK";
+        return "OKOKOKOKOKOKOKOK webhook";
     }
     @GetMapping("/hello")
     public String Hello(){
