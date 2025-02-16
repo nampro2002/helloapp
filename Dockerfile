@@ -19,7 +19,7 @@ COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8081
 
 # 🔹 HEALTHCHECK cập nhật với cổng mới
-HEALTHCHECK --interval=3s --timeout=2s --start-period=5s --retries=1 CMD curl -f http://localhost:8081/health || exit 1
+HEALTHCHECK --interval=3s --timeout=2s --start-period=5s --retries=1 CMD curl -f http://localhost:8081 || exit 1
 
 # Chạy ứng dụng trên cổng 8081
 ENTRYPOINT ["java", "-jar", "app.jar", "--server.port=8081"]
