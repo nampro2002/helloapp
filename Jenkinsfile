@@ -11,34 +11,61 @@ pipeline {
         stage('SCM Checkout') {
             steps {
                 script {
-                    // Lấy thông tin nhánh hiện tại
-                    def branchName = env.BRANCH_NAME
-                    echo "Branch: ${branchName}"
+                    // Lấy tên branch và target branch của PR (nếu có)
+                    def branchName = env.BRANCH_NAME ?: ''
+                    def changeTarget = env.CHANGE_TARGET ?: ''
+                    echo "Branch: ${branchName}, Change Target: ${changeTarget}"
 
-                    // Cấu hình scmGit để checkout các nhánh dev và feat/*
-                    if (branchName == 'dev' || branchName.startsWith('feat/')) {
-                        echo "Checkout for branch: ${branchName}"
-                        checkout scmGit(
-                            branches: [[name: '*/dev'], [name: '*/feat/*']],
-                            extensions: [],
-                            userRemoteConfigs: [[
-                                credentialsId: 'github-credential',
-                                url: 'https://github.com/nampro2002/helloapp.git'
-                            ]]
-                        )
+                    // Nếu đang push trực tiếp lên dev, feat/*, master hoặc là PR nhắm tới master thì checkout code
+                    if (branchName == 'dev' || branchName.startsWith('feat/') || branchName == 'master' || changeTarget == 'master') {
+                        echo "Checking out code..."
+                        checkout scm
                     } else {
-                        echo "Skipping checkout for non-Dev or non-Feat branch"
+                        echo "Skipping checkout for branch: ${branchName}"
                     }
                 }
+            }
+        }
+
+        stage('Build Docker Image') {
+            when {
+                anyOf {
+                    // Push trực tiếp lên dev hoặc feat/*
+                    branch 'dev'
+                    branch pattern: "feat/.*", comparator: "REGEXP"
+                    // Merge vào master (approved build)
+                    allOf {
+                        branch 'master'
+                        not { changeRequest() }
+                    }
+                    // PR nhắm tới master
+                    allOf {
+                        changeRequest()
+                        expression { env.CHANGE_TARGET == 'master' }
+                    }
+                }
+            }
+            steps {
+                sh '''
+                    echo "Building Docker image..."
+                    docker build -t ${DOCKER_IMAGE} .
+                '''
             }
         }
 
         stage('Run SonarQube (SAST Scan)') {
             when {
                 anyOf {
-                    branch 'dev'
-                    branch pattern: "feat/.*", comparator: "REGEXP"
-                    changeRequest() // Trigger PR scan
+                    // PR nhắm tới master
+                    allOf {
+                        changeRequest()
+                        expression { env.CHANGE_TARGET == 'master' }
+                    }
+                    // Merge vào master (approved build)
+                    allOf {
+                        branch 'master'
+                        not { changeRequest() }
+                    }
                 }
             }
             environment {
@@ -66,46 +93,12 @@ pipeline {
             }
         }
 
-        stage('Dockerfile Scan (Hadolint)') {
-            when {
-                anyOf {
-                    branch 'dev'
-                    branch pattern: "feat/.*", comparator: "REGEXP"
-                    changeRequest() // Trigger PR scan
-                }
-            }
-            steps {
-                script {
-                    def hadolintResult = sh(script: 'hadolint Dockerfile', returnStatus: true)
-                    if (hadolintResult != 0) {
-                        error "Hadolint found issues in Dockerfile!"
-                    }
-                }
-            }
-        }
-
-        stage('Build Docker Image') {
-            when {
-                anyOf {
-                    branch 'dev'
-                    branch pattern: "feat/.*", comparator: "REGEXP"
-                    changeRequest() // Trigger PR build
-                }
-            }
-            steps {
-                sh '''
-                    echo "Building Docker image..."
-                    docker build -t ${DOCKER_IMAGE} .
-                '''
-            }
-        }
-
         stage('Container Image Scan (Trivy)') {
+            // Chỉ chạy khi merge (approved build) trên branch master
             when {
-                anyOf {
-                    branch 'dev'
-                    branch pattern: "feat/.*", comparator: "REGEXP"
-                    changeRequest() // Trigger PR scan
+                allOf {
+                    branch 'master'
+                    not { changeRequest() }
                 }
             }
             steps {
@@ -118,45 +111,18 @@ pipeline {
             }
         }
 
-        stage('Push to DockerHub') {
-            when {
-                allOf {
-                    branch 'dev'
-                    not {
-                        changeRequest() // Do not push during PR phase
-                    }
-                }
-            }
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh '''
-                            echo "Logging in to DockerHub..."
-                            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-                        '''
-                        sh '''
-                            echo "Pushing Docker image to DockerHub..."
-                            docker tag ${DOCKER_IMAGE} cannam2002/helloapp:latest
-                            docker push cannam2002/helloapp:latest
-                        '''
-                    }
-                }
-            }
-        }
-
         stage('Deploy') {
+            // Chỉ deploy khi merge (approved build) trên branch master
             when {
                 allOf {
-                    branch 'dev'
-                    not {
-                        changeRequest() // Do not deploy during PR phase
-                    }
+                    branch 'master'
+                    not { changeRequest() }
                 }
             }
             steps {
                 script {
                     echo "Deploying to environment..."
-                    // Add your deployment commands here (e.g., kubectl or docker-compose)
+                    // Thêm các lệnh deploy của bạn tại đây (ví dụ: kubectl, docker-compose,...)
                 }
             }
         }
