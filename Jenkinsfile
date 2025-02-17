@@ -119,9 +119,73 @@
                     }
                 }
             }
-    
+            stage('Container Validation Test') {
+                when {
+                    allOf {
+                        branch 'master'
+                        not { changeRequest() }
+                    }
+                }
+                steps {
+                    script {
+                        echo "Starting container..."
+                        def containerId = sh(script: 'docker run -d --rm -p 8081:8081 ${DOCKER_IMAGE}', returnStdout: true).trim()
+            
+                        echo "Waiting for container to be ready..."
+                        sleep 10  // Chờ 10 giây trước khi kiểm tra
+            
+                        echo "Checking container health..."
+                        def max_retries = 5
+                        def count = 0
+                        def healthCheck = 1
+            
+                        while (count < max_retries) {
+                            healthCheck = sh(script: 'curl -sf http://localhost:8081', returnStatus: true)
+                            if (healthCheck == 0) {
+                                break
+                            }
+                            echo "Retrying health check... Attempt ${count + 1}/${max_retries}"
+                            sleep 5
+                            count++
+                        }
+            
+                        if (healthCheck != 0) {
+                            echo "Container failed health check! Stopping container..."
+                            sh "docker stop ${containerId}"
+                            error "Health check failed!"
+                        } else {
+                            echo "Container is healthy!"
+                            sh "docker stop ${containerId}"
+                        }
+                    }
+                }
+            }
+
+
+            stage('Push to DockerHub') {
+                when {
+                    allOf {
+                        branch 'master'
+                        not { changeRequest() }
+                    }
+                }
+                steps {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                            sh '''
+                                echo "Logging in to DockerHub..."
+                                docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+                            '''
+                            sh '''
+                                echo "Pushing Docker image to DockerHub..."
+                                docker tag ${DOCKER_IMAGE} cannam2002/helloapp:latest
+                                docker push cannam2002/helloapp:latest
+                            '''
+                        }
+                    }
+                }
+            }
             stage('Deploy') {
-                // Chỉ deploy khi merge (approved build) trên branch master
                 when {
                     allOf {
                         branch 'master'
@@ -131,7 +195,6 @@
                 steps {
                     script {
                         echo "Deploying to environment..."
-                        // Thêm các lệnh deploy của bạn tại đây (ví dụ: kubectl, docker-compose,...)
                     }
                 }
             }
