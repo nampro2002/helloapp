@@ -7,21 +7,27 @@ pipeline {
         DOCKER_IMAGE = 'helloapp:latest'
     }
 
-    stages { 
+    stages {
         stage('SCM Checkout') {
             steps {
                 script {
-                    // Lấy tên branch và target branch của PR (nếu có)
-                    def branchName = env.BRANCH_NAME ?: ''
-                    def changeTarget = env.CHANGE_TARGET ?: ''
-                    echo "Branch: ${branchName}, Change Target: ${changeTarget}"
+                    // Nếu env.BRANCH_NAME bị null, lấy tên nhánh bằng git
+                    if (!env.BRANCH_NAME) {
+                        def gitBranch = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                        env.BRANCH_NAME = gitBranch
+                    }
+                    echo "Branch: ${env.BRANCH_NAME}"
+                    echo "Change Target: ${env.CHANGE_TARGET ?: 'N/A'}"
 
-                    // Nếu đang push trực tiếp lên dev, feat/*, master hoặc là PR nhắm tới master thì checkout code
-                    if (branchName == 'dev' || branchName.startsWith('feat/') || branchName == 'master' || changeTarget == 'master') {
-                        echo "Checking out code..."
+                    // Checkout nếu là:
+                    // - Push trực tiếp lên dev, feat/*, master
+                    // - Hoặc PR nhắm tới master (CHANGE_TARGET = master)
+                    if (env.BRANCH_NAME == 'dev' || env.BRANCH_NAME.startsWith('feat/') || 
+                        env.BRANCH_NAME == 'master' || env.CHANGE_TARGET == 'master') {
+                        echo "Performing checkout..."
                         checkout scm
                     } else {
-                        echo "Skipping checkout for branch: ${branchName}"
+                        echo "Skipping checkout for branch: ${env.BRANCH_NAME}"
                     }
                 }
             }
@@ -33,7 +39,7 @@ pipeline {
                     // Push trực tiếp lên dev hoặc feat/*
                     branch 'dev'
                     branch pattern: "feat/.*", comparator: "REGEXP"
-                    // Merge vào master (approved build)
+                    // Merge (approved) trên master
                     allOf {
                         branch 'master'
                         not { changeRequest() }
@@ -61,7 +67,7 @@ pipeline {
                         changeRequest()
                         expression { env.CHANGE_TARGET == 'master' }
                     }
-                    // Merge vào master (approved build)
+                    // Merge (approved) trên master
                     allOf {
                         branch 'master'
                         not { changeRequest() }
@@ -94,7 +100,7 @@ pipeline {
         }
 
         stage('Container Image Scan (Trivy)') {
-            // Chỉ chạy khi merge (approved build) trên branch master
+            // Chỉ chạy khi merge (approved) trên master
             when {
                 allOf {
                     branch 'master'
@@ -112,7 +118,7 @@ pipeline {
         }
 
         stage('Deploy') {
-            // Chỉ deploy khi merge (approved build) trên branch master
+            // Deploy chỉ khi merge (approved) trên master
             when {
                 allOf {
                     branch 'master'
@@ -122,7 +128,7 @@ pipeline {
             steps {
                 script {
                     echo "Deploying to environment..."
-                    // Thêm các lệnh deploy của bạn tại đây (ví dụ: kubectl, docker-compose,...)
+                    // Thêm các lệnh deploy của bạn (ví dụ: kubectl, docker-compose, v.v.)
                 }
             }
         }
