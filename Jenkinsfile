@@ -7,15 +7,6 @@
             DOCKER_IMAGE = 'helloapp:latest'
         }
 
-        stage('Maven Build') {
-            steps {
-                script {
-                    // Chạy lệnh build Maven để tạo các file cần thiết cho SonarQube (ví dụ: target/classes)
-                    echo "Running Maven build..."
-                    sh 'mvn clean install'
-                }
-            }
-        }
         stages { 
             stage('SCM Checkout') {
                 steps {
@@ -32,6 +23,15 @@
                         } else {
                             echo "Skipping checkout for branch: ${branchName}"
                         }
+                    }
+                }
+            }
+            stage('Maven Build') {
+                steps {
+                    script {
+                        // Chạy lệnh build Maven để tạo các file cần thiết cho SonarQube (ví dụ: target/classes)
+                        echo "Running Maven build..."
+                        sh 'mvn clean install'
                     }
                 }
             }
