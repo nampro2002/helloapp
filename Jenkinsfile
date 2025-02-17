@@ -11,21 +11,13 @@ pipeline {
         stage('SCM Checkout') {
             steps {
                 script {
-                    // Lấy thông tin nhánh hiện tại từ git
-                    def branchName = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    def branchName = env.BRANCH_NAME
                     echo "Branch: ${branchName}"
-    
-                    // Cấu hình scmGit để checkout các nhánh dev và feat/*
+
+                    // Cấu hình checkout cho các nhánh dev và feat/*
                     if (branchName == 'dev' || branchName.startsWith('feat/')) {
                         echo "Checkout for branch: ${branchName}"
-                        checkout scmGit(
-                            branches: [[name: '*/dev'], [name: '*/feat/*']],
-                            extensions: [],
-                            userRemoteConfigs: [[
-                                credentialsId: 'github-credential',
-                                url: 'https://github.com/nampro2002/helloapp.git'
-                            ]]
-                        )
+                        checkout scm
                     } else {
                         echo "Skipping checkout for non-Dev or non-Feat branch"
                     }
