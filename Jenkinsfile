@@ -11,10 +11,10 @@ pipeline {
         stage('SCM Checkout') {
             steps {
                 script {
-                    // Lấy thông tin nhánh hiện tại
-                    def branchName = env.BRANCH_NAME
+                    // Lấy thông tin nhánh hiện tại từ git
+                    def branchName = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
                     echo "Branch: ${branchName}"
-
+    
                     // Cấu hình scmGit để checkout các nhánh dev và feat/*
                     if (branchName == 'dev' || branchName.startsWith('feat/')) {
                         echo "Checkout for branch: ${branchName}"
