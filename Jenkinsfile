@@ -1,6 +1,6 @@
 pipeline {
     agent any
-
+ 
     environment {
         SONARQUBE_SERVER_URL = credentials('sonarqube-server-url')
         SONAR_PROJECT_KEY = 'helloapp'
