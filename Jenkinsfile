@@ -1,5 +1,5 @@
     pipeline {
-        agent any
+        agent any 
     
         environment {
             SONARQUBE_SERVER_URL = credentials('sonarqube-server-url')
