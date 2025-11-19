@@ -1,6 +1,6 @@
 steps:
   - name: gcr.io/cloud-builders/docker
-    args:
+    args: 
       - build
       - '-t'
       - '$_AR_HOSTNAME/$_PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$COMMIT_SHA' 
