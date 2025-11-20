@@ -5,7 +5,7 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
 # copy file cấu hình trước để cache dependency
-COPY pom.xml .
+COPY pom.xml . 
 RUN mvn -B dependency:go-offline
 
 # copy source code và build
