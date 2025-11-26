@@ -2,7 +2,7 @@ steps:
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk 
     id: 'fetch-config-from-secret-manager'
     entrypoint: bash
-    args:
+    args: 
       - -c
       - |
         echo "[Cloud Build] Fetching config from Secret Manager..."
