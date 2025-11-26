@@ -1,4 +1,15 @@
 steps:
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: 'fetch-config-from-secret-manager'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        echo "[Cloud Build] Fetching config from Secret Manager..."
+        gcloud secrets versions access latest \
+          --secret=$_SECRET_NAME \
+          --project=$_PROJECT_ID \
+          > src/main/java/com/example/Hello/TestController.java
   - name: gcr.io/cloud-builders/docker
     args: 
       - build
