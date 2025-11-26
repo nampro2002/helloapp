@@ -26,7 +26,7 @@ steps:
       - deploy
       - $_SERVICE_NAME
       - '--image'
-      - '$_AR_HOSTNAME/$_PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$COMMIT_SHA'
+      - '$_AR_HOSTNAME/$_PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$COMMIT_SHA' 
       - '--region'
       - $_DEPLOY_REGION
       - '--platform'
