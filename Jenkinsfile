@@ -6,7 +6,7 @@
             SONAR_PROJECT_KEY = 'helloapp' 
             DOCKER_IMAGE = 'helloapp:latest' 
         } 
-
+ 
         stages { 
             stage('SCM Checkout') {
                 steps {
