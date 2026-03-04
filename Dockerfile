@@ -7,7 +7,7 @@ WORKDIR /app
 # copy file cấu hình trước để cache dependency
 COPY pom.xml . 
 RUN mvn -B dependency:go-offline
-
+ 
 # copy source code và build
 COPY src ./src
 RUN mvn -B -DskipTests package
