@@ -13,7 +13,7 @@
                     script {
                         // Lấy tên branch và target branch của PR (nếu có)
                         def branchName = env.BRANCH_NAME ?: ''
-                        def changeTarget = env.CHANGE_TARGET ?: ''
+                        def changeTarget = env.CHANGE_TARGET ?: '' 
                         echo "Branch: ${branchName}, Change Target: ${changeTarget}"
     
                         // Nếu đang push trực tiếp lên dev, feat/*, master hoặc là PR nhắm tới master thì checkout code
