@@ -7,7 +7,7 @@
             DOCKER_IMAGE = 'helloapp:latest' 
         }  
  
-        stages { 
+        stages {  
             stage('SCM Checkout') {
                 steps {
                     script {
