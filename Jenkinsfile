@@ -5,7 +5,7 @@
             SONARQUBE_SERVER_URL = credentials('sonarqube-server-url')  
             SONAR_PROJECT_KEY = 'helloapp'  
             DOCKER_IMAGE = 'helloapp:latest'   
-        }  
+        }   
   
         stages {  
             stage('SCM Checkout') {
